@@ -1,0 +1,10 @@
+[
+    {
+        "workflow": "01_workflow",
+        "pacing": 3
+    },
+    {
+        "workflow": "02_workflow",
+        "pacing": 6
+    }
+]

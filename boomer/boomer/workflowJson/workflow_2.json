@@ -1,0 +1,14 @@
+{
+    "description": "This is workflow 2",
+    "mode": "distributed",
+    "tasks": [
+        {
+            "name": "Workflow_02",
+            "weight": 10
+        },
+        {
+            "name": "Workflow_03",
+            "weight": 10
+        }
+    ]
+}

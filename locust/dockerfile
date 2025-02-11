@@ -1,0 +1,9 @@
+FROM locustio/locust:1.6.0
+WORKDIR /home/locust
+COPY *.py .
+COPY requirements.txt .
+
+RUN python3 -m pip install --upgrade pip && \
+    pip3 install -r requirements.txt
+
+EXPOSE 5557

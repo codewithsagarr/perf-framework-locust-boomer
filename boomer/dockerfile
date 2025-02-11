@@ -1,0 +1,32 @@
+#
+#   Get golang compiler image to build the boomer application
+#
+FROM golang:1.23 AS builder
+
+COPY . /app
+WORKDIR /app
+
+RUN go build -v -o ./dist/testapp ./main.go
+
+
+#
+#   Using a small container image to copy the compiled boomer application to
+#
+FROM debian:12.0
+COPY --from=builder /app/dist/testapp /bin/testapp
+COPY --from=builder /app /mnt/
+
+# Copy the entrypoint script
+COPY entrypoint.sh /bin/entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x /bin/entrypoint.sh
+
+# Set the entrypoint
+ENTRYPOINT ["/bin/entrypoint.sh"]
+
+RUN rm /etc/apt/sources.list.d/debian.sources
+# RUN apt-get updated && apt-get install -y wget
+WORKDIR /bin
+ENV TZ="Australia/Sydney"
+CMD ["/bin/testapp"]

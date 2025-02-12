@@ -1,0 +1,57 @@
+services:
+  locust:
+    build: 
+      context: ./locust/
+      dockerfile: Dockerfile
+    image: chausag.azurecr.io/locust-masterr:latest
+    container_name: locust
+    env_file:
+      - .env
+    networks:
+      - stepbystep_performance_network
+    expose:
+      - "8089:8089"
+      - "5557:5557"
+    environment:
+      - RUN_ID=${RUN_ID}
+      # - INFLUXDB_ADDRESS=${INFLUXDB_ADDRESS}
+      - TEST_ENVIRONMENT=${TEST_ENVIRONMENT}
+      # - OTEL_COLLECTOR=${OTEL_COLLECTOR}
+      # - INFLUXDB_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+      # - INFLUXDB_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      # - INFLUXDB_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+    command: -f /home/locust/locustfile.py --master --headless --expect-workers 2 --users 2 --run-time 300s --spawn-rate .1
+
+  boomer:
+    depends_on:
+      # - influxdb
+      # - jaeger
+      # - node_grpc_server
+      # - node_http_server
+      - locust
+    build: 
+      context: ./boomer/
+      dockerfile: Dockerfile
+    image: chausag.azurecr.io/boomer-workerr:latest
+    env_file:
+      - .env
+    networks:
+      - stepbystep_performance_network
+    environment:
+      - RUN_ID=${RUN_ID}
+      - BOOMER_SERVICE=${BOOMER_SERVICE}
+      - LOCUST_ADDRESS=${LOCUST_ADDRESS}
+      - LOCUST_PORT=${LOCUST_PORT}
+      - TEST_ENVIRONMENT=${TEST_ENVIRONMENT}
+      # - OTEL_COLLECTOR=${OTEL_COLLECTOR}
+      # - OTEL_COLLECTOR_ADDRESS=${OTEL_COLLECTOR_ADDRESS}
+      # - INFLUXDB_ADDRESS=${INFLUXDB_ADDRESS}
+      # - INFLUXDB_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+      # - INFLUXDB_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      # - INFLUXDB_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      # - OTEL_JAEGER_COLLECTOR_ADDRESS=${OTEL_JAEGER_COLLECTOR_ADDRESS}
+      # - GRPC_END_POINT=${GRPC_END_POINT}:${GRPC_SERVER_PORT}
+      # - HTTP_END_POINT=${HTTP_END_POINT}:${HTTP_SERVER_PORT}
+networks:
+  stepbystep_performance_network:
+    driver: bridge

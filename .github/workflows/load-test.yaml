@@ -20,7 +20,7 @@ jobs:
       - name: Create Azure VM
         run: |
           az vm create \
-            --resource-group MyResourceGroup \
+            --resource-group demoresourcegrp \
             --name LoadTestVM \
             --image Ubuntu2204 \
             --admin-username azureuser \
@@ -29,7 +29,7 @@ jobs:
 
       - name: Install Docker & Run Tests
         run: |
-          az vm run-command invoke -g MyResourceGroup -n LoadTestVM --command-id RunShellScript --scripts "
+          az vm run-command invoke -g demoresourcegrp -n LoadTestVM --command-id RunShellScript --scripts "
           sudo apt-get update &&
           sudo apt-get install -y docker.io docker-compose &&
           sudo usermod -aG docker azureuser &&
@@ -42,4 +42,4 @@ jobs:
       - name: Terminate Azure VM
         if: always()
         run: |
-          az vm delete --resource-group MyResourceGroup --name LoadTestVM --yes
+          az vm delete --resource-group demoresourcegrp --name LoadTestVM --yes

@@ -1,12 +1,19 @@
-name: Run Load Test on Azure VM
+name: Run Load Test on Azure ACI
 
 on:
   push:
     branches:
       - test # Trigger when pushing to 'test' branch
 
+env:
+  RESOURCE_GROUP: demoresourcegrp
+  ACR_NAME: chausag # Change this to your Azure Container Registry name
+  LOCUST_MASTER: locust-master
+  LOCUST_WORKER: boomer-worker
+  ACI_GROUP: locust-loadtest
+
 jobs:
-  deploy-test-vm:
+  deploy-load-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -17,49 +24,43 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Create Azure VM
+      - name: Log in to Azure Container Registry
         run: |
-          az vm create \
-            --resource-group demoresourcegrp \
-            --name LoadTestVM \
-            --image Ubuntu2204 \
-            --admin-username azureuser \
-            --generate-ssh-keys \
-            --size Standard_B2ms
+          az acr login --name $ACR_NAME
 
-      - name: Install Docker & Run Tests
+      - name: Build and Push Docker Images
         run: |
-          az vm run-command invoke -g demoresourcegrp -n LoadTestVM --command-id RunShellScript --scripts "
-          sudo apt-get update &&
-          sudo apt-get install -y docker.io docker-compose &&
-          sudo usermod -aG docker azureuser &&
-          git clone https://github.com/codewithsagarr/perf-framework-locust-boomer.git &&
-          cd perf-framework-locust-boomer &&
-          docker-compose up --scale boomer=2 --build -d &&
-          docker-compose logs -f > loadtest_logs.txt &
-          sleep 70s
-          "
+          docker build -t $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest -f Dockerfile.master ./locust
+          docker build -t $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest -f Dockerfile.worker ./boomer
+          docker push $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest
+          docker push $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest
 
-      - name: Fetch Logs from VM
+      - name: Deploy Locust Master and Workers to Azure Container Instances
+        run: |
+          az container create --resource-group $RESOURCE_GROUP --name $ACI_GROUP \
+            --image $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest \
+            --cpu 2 --memory 4 \
+            --registry-login-server $ACR_NAME.azurecr.io \
+            --registry-username ${{ secrets.ACR_USERNAME }} \
+            --registry-password ${{ secrets.ACR_PASSWORD }} \
+            --dns-name-label locust-master-${{ github.run_id }} \
+            --ports 8089 \
+            --secure-environment-variables EXPECT_WORKERS=2
+
+          az container create --resource-group $RESOURCE_GROUP --name $ACI_GROUP-workers \
+            --image $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest \
+            --cpu 1 --memory 2 \
+            --registry-login-server $ACR_NAME.azurecr.io \
+            --registry-username ${{ secrets.ACR_USERNAME }} \
+            --registry-password ${{ secrets.ACR_PASSWORD }} \
+            --secure-environment-variables LOCUST_MASTER_HOST=http://locust-master-${{ github.run_id }}:8089
+
+      - name: Stream Logs from Locust Master
+        run: |
+          az container logs --resource-group $RESOURCE_GROUP --name $ACI_GROUP
+
+      - name: Delete ACI After Test
         if: always()
         run: |
-          az vm run-command invoke -g demoresourcegrp -n LoadTestVM --command-id RunShellScript --scripts "
-          cat perf-framework-locust-boomer/loadtest_logs.txt
-          "
-
-      - name: Upload Logs to GitHub Artifacts
-        if: always()
-        run: |
-          az vm run-command invoke -g demoresourcegrp -n LoadTestVM --command-id RunShellScript --scripts "
-          cat perf-framework-locust-boomer/loadtest_logs.txt
-          " > loadtest_logs.txt
-
-          cat loadtest_logs.txt  # Display logs in GitHub Actions console
-
-          echo 'Uploading logs...'
-          gh run upload-artifact loadtest_logs.txt
-
-      - name: Terminate Azure VM
-        if: always()
-        run: |
-          az vm delete --resource-group demoresourcegrp --name LoadTestVM --yes
+          az container delete --resource-group $RESOURCE_GROUP --name $ACI_GROUP --yes
+          az container delete --resource-group $RESOURCE_GROUP --name $ACI_GROUP-workers --yes

@@ -45,7 +45,7 @@ jobs:
       - name: Deploy Locust Master and Workers to Azure Container Instances
         run: |
           az container create --resource-group $RESOURCE_GROUP --name $ACI_GROUP \
-            --image $ACR_NAME.azurecr.io/locust-master:latest \
+            --image $ACR_NAME.azurecr.io/locust-masterr:latest \
             --cpu 2 --memory 4 \
             --registry-login-server $ACR_NAME.azurecr.io \
             --registry-username ${{ secrets.ACR_USERNAME }} \
@@ -53,16 +53,17 @@ jobs:
             --os-type Linux \
             --dns-name-label locust-master-${{ github.run_id }} \
             --ports 8089 \
-            --secure-environment-variables EXPECT_WORKERS=2
+            --secure-environment-variables EXPECT_WORKERS=1 \
+            --command-line "locust -f ./locustfile.py --master --headless --expect-workers 1 --users 1 --run-time 60s --spawn-rate .1"
 
-          az container create --resource-group $RESOURCE_GROUP --name $ACI_GROUP-workers \
-            --image $ACR_NAME.azurecr.io/boomer-worker:latest \
-            --cpu 1 --memory 2 \
-            --registry-login-server $ACR_NAME.azurecr.io \
-            --registry-username ${{ secrets.ACR_USERNAME }} \
-            --registry-password ${{ secrets.ACR_PASSWORD }} \
-            --os-type Linux \
-            --secure-environment-variables LOCUST_MASTER_HOST=http://locust-master-${{ github.run_id }}:8089
+          # az container create --resource-group $RESOURCE_GROUP --name $ACI_GROUP-workers \
+          #   --image $ACR_NAME.azurecr.io/boomer-workerr:latest \
+          #   --cpu 1 --memory 2 \
+          #   --registry-login-server $ACR_NAME.azurecr.io \
+          #   --registry-username ${{ secrets.ACR_USERNAME }} \
+          #   --registry-password ${{ secrets.ACR_PASSWORD }} \
+          #   --os-type Linux \
+          #   --secure-environment-variables LOCUST_MASTER_HOST=http://locust-master-${{ github.run_id }}:8089
 
       - name: Stream Logs from Locust Master
         run: |

@@ -19,7 +19,7 @@ services:
       # - INFLUXDB_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
       # - INFLUXDB_ORG=${DOCKER_INFLUXDB_INIT_ORG}
       # - INFLUXDB_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
-    command: -f /home/locust/locustfile.py --master --headless --expect-workers 1 --users 2 --run-time 60s --spawn-rate .1
+    command: -f /home/locust/locustfile.py --master --headless --expect-workers 2 --users 2 --run-time 300s --spawn-rate .1
 
   boomer:
     depends_on:

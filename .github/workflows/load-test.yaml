@@ -1,0 +1,45 @@
+name: Run Load Test on Azure VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-test-vm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create Azure VM
+        run: |
+          az vm create \
+            --resource-group MyResourceGroup \
+            --name LoadTestVM \
+            --image Ubuntu2204 \
+            --admin-username azureuser \
+            --generate-ssh-keys \
+            --size Standard_B2ms
+
+      - name: Install Docker & Run Tests
+        run: |
+          az vm run-command invoke -g MyResourceGroup -n LoadTestVM --command-id RunShellScript --scripts "
+          sudo apt-get update &&
+          sudo apt-get install -y docker.io docker-compose &&
+          sudo usermod -aG docker azureuser &&
+          git clone  https://github.com/codewithsagarr/perf-framework-locust-boomer.git &&
+          cd perf-framework-locust-boomer &&
+          docker-compose up --scale boomer=2 --build &&
+          sleep 70s
+          "
+
+      - name: Terminate Azure VM
+        if: always()
+        run: |
+          az vm delete --resource-group MyResourceGroup --name LoadTestVM --yes

@@ -8,8 +8,6 @@ on:
 env:
   RESOURCE_GROUP: demoresourcegrp
   ACR_NAME: chausag # Change this to your Azure Container Registry name
-  LOCUST_MASTER: locust-master
-  LOCUST_WORKER: boomer-worker
   ACI_GROUP: locust-loadtest
 
 jobs:
@@ -28,18 +26,15 @@ jobs:
         run: |
           az acr login --name $ACR_NAME
 
-      - name: Build and Push Docker Images
+      - name: Build and Push Docker Images with Docker Compose
         run: |
-          ls -la
-          docker build -t $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest -f locust/dockerfile ./locust
-          docker build -t $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest -f boomer/dockerfile ./boomer
-          docker push $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest
-          docker push $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest
+          docker-compose build
+          docker-compose push
 
       - name: Deploy Locust Master and Workers to Azure Container Instances
         run: |
           az container create --resource-group $RESOURCE_GROUP --name $ACI_GROUP \
-            --image $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest \
+            --image $ACR_NAME.azurecr.io/locust-master:latest \
             --cpu 2 --memory 4 \
             --registry-login-server $ACR_NAME.azurecr.io \
             --registry-username ${{ secrets.ACR_USERNAME }} \
@@ -50,7 +45,7 @@ jobs:
             --secure-environment-variables EXPECT_WORKERS=2
 
           az container create --resource-group $RESOURCE_GROUP --name $ACI_GROUP-workers \
-            --image $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest \
+            --image $ACR_NAME.azurecr.io/boomer-worker:latest \
             --cpu 1 --memory 2 \
             --registry-login-server $ACR_NAME.azurecr.io \
             --registry-username ${{ secrets.ACR_USERNAME }} \

@@ -44,6 +44,7 @@ jobs:
             --registry-login-server $ACR_NAME.azurecr.io \
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }} \
+            --os-type Linux \
             --dns-name-label locust-master-${{ github.run_id }} \
             --ports 8089 \
             --secure-environment-variables EXPECT_WORKERS=2

@@ -1,0 +1,3 @@
+az role assignment create --assignee e57a18d0-477f-4470-96cb-30e71a0d7bb9 \
+    --role Contributor \
+    --scope /subscriptions/e04ecfc7-dce1-4755-8884-58ac71e50838

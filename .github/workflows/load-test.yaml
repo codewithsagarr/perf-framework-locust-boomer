@@ -30,6 +30,7 @@ jobs:
 
       - name: Build and Push Docker Images
         run: |
+          ls -la
           docker build -t $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest -f lucust/dockerfile .
           docker build -t $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest -f boomer/dockerfile .
           docker push $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest

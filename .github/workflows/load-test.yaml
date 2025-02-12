@@ -30,8 +30,8 @@ jobs:
 
       - name: Build and Push Docker Images
         run: |
-          docker build -t $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest -f Dockerfile.master ./locust
-          docker build -t $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest -f Dockerfile.worker ./boomer
+          docker build -t $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest -f dockerfile ./locust
+          docker build -t $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest -f dockerfile ./boomer
           docker push $ACR_NAME.azurecr.io/$LOCUST_MASTER:latest
           docker push $ACR_NAME.azurecr.io/$LOCUST_WORKER:latest
 

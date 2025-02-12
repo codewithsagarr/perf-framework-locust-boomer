@@ -42,17 +42,22 @@ jobs:
           docker-compose build
           docker-compose push
 
-      - name: Deploy to Azure
+      - name: Deploy with Scaling
         run: |
+          # Deploy using Docker Compose with scaling
+          docker-compose up --scale boomer=2 -d
 
-          # Deploy using the Compose file (now referencing ACR images)
-          az container create \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --name ${{ env.APP_NAME }} \
-            --file docker-compose.yml \
-            --registry-login-server ${{ env.ACR_NAME }}.azurecr.io \
-            --registry-username ${{ secrets.ACR_USERNAME }} \
-            --registry-password ${{ secrets.ACR_PASSWORD }}
+      # - name: Deploy to Azure
+      #   run: |
+
+      #     # Deploy using the Compose file (now referencing ACR images)
+      #     az container create \
+      #       --resource-group ${{ env.RESOURCE_GROUP }} \
+      #       --name ${{ env.APP_NAME }} \
+      #       --file docker-compose.yml \
+      #       --registry-login-server ${{ env.ACR_NAME }}.azurecr.io \
+      #       --registry-username ${{ secrets.ACR_USERNAME }} \
+      #       --registry-password ${{ secrets.ACR_PASSWORD }}
 
       # - name: Deploy Locust Master
       #   run: |

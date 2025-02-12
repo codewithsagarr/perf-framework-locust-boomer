@@ -3,6 +3,7 @@ services:
     build: 
       context: ./locust/
       dockerfile: Dockerfile
+    image: chausag.azurecr.io/locust-masterr:latest
     container_name: locust
     env_file:
       - .env
@@ -31,6 +32,7 @@ services:
     build: 
       context: ./boomer/
       dockerfile: Dockerfile
+    image: chausag.azurecr.io/boomer-workerr:latest
     env_file:
       - .env
     networks:

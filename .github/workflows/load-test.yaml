@@ -55,6 +55,7 @@ jobs:
             --registry-login-server $ACR_NAME.azurecr.io \
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }} \
+            --os-type Linux \
             --secure-environment-variables LOCUST_MASTER_HOST=http://locust-master-${{ github.run_id }}:8089
 
       - name: Stream Logs from Locust Master

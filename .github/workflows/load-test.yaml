@@ -35,7 +35,7 @@ jobs:
           sudo usermod -aG docker azureuser &&
           git clone  https://github.com/codewithsagarr/perf-framework-locust-boomer.git &&
           cd perf-framework-locust-boomer &&
-          docker-compose up --scale boomer=2 --build &&
+          docker-compose up --scale boomer=2 --build && docker-compose up logs &&
           sleep 70s
           "
 

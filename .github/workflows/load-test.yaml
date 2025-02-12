@@ -3,7 +3,7 @@ name: Run Load Test on Azure VM
 on:
   push:
     branches:
-      - test
+      - test # Trigger when pushing to 'test' branch
 
 jobs:
   deploy-test-vm:
@@ -33,11 +33,31 @@ jobs:
           sudo apt-get update &&
           sudo apt-get install -y docker.io docker-compose &&
           sudo usermod -aG docker azureuser &&
-          git clone  https://github.com/codewithsagarr/perf-framework-locust-boomer.git &&
+          git clone https://github.com/codewithsagarr/perf-framework-locust-boomer.git &&
           cd perf-framework-locust-boomer &&
-          docker-compose up --scale boomer=2 --build && docker-compose up logs docker-compose logs -f &&
+          docker-compose up --scale boomer=2 --build -d &&
+          docker-compose logs -f > loadtest_logs.txt &
           sleep 70s
           "
+
+      - name: Fetch Logs from VM
+        if: always()
+        run: |
+          az vm run-command invoke -g demoresourcegrp -n LoadTestVM --command-id RunShellScript --scripts "
+          cat perf-framework-locust-boomer/loadtest_logs.txt
+          "
+
+      - name: Upload Logs to GitHub Artifacts
+        if: always()
+        run: |
+          az vm run-command invoke -g demoresourcegrp -n LoadTestVM --command-id RunShellScript --scripts "
+          cat perf-framework-locust-boomer/loadtest_logs.txt
+          " > loadtest_logs.txt
+
+          cat loadtest_logs.txt  # Display logs in GitHub Actions console
+
+          echo 'Uploading logs...'
+          gh run upload-artifact loadtest_logs.txt
 
       - name: Terminate Azure VM
         if: always()

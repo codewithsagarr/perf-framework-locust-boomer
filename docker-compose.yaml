@@ -59,7 +59,7 @@
 
 services:
   master:
-    image: chausag.azurecr.io/master:${{ github.sha }}  # ACR image for master
+    image: chausag.azurecr.io/locust-masterr:latest  # ACR image for master
     env_file:
       - .env
     expose:
@@ -70,7 +70,7 @@ services:
   boomer:
     depends_on:
       - master
-    image: chausag.azurecr.io/boomer:${{ github.sha }}  # ACR image for boomer
+    image: chausag.azurecr.io/boomer-workerr:latest  # ACR image for boomer
     env_file:
       - .env
     environment:
